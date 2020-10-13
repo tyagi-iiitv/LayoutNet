@@ -12,33 +12,33 @@ slim = tf.contrib.slim
 
 class Trainer(object):
     def __init__(self, config):
-        filenamequeue = tf.train.string_input_producer([config.filenamequeue])
+        filenamequeue = tf.compat.v1.train.string_input_producer([config.filenamequeue])
         self.global_step = tf.Variable(0, name="global_step")
         self.model = self._build_model(filenamequeue, config)
-        self.saver = tf.train.Saver(max_to_keep=None)
+        self.saver = tf.compat.v1.train.Saver(max_to_keep=None)
 
         if not os.path.exists(config.sampledir):
             os.makedirs(config.sampledir)
 
-        self.loss_summaries = tf.summary.merge([
-            tf.summary.scalar("loss_D_real", self.model["loss_D_real"]),
-            tf.summary.scalar("loss_D_fake", self.model["loss_D_fake"]),
-            tf.summary.scalar("loss_D", self.model["loss_D"]),
-            tf.summary.scalar("loss_G", self.model["loss_G"]),
-            tf.summary.scalar("loss_E", self.model["loss_E"])])
-        self.summary_writer = tf.summary.FileWriter(config.logdir)
+        self.loss_summaries = tf.compat.v1.summary.merge([
+            tf.compat.v1.summary.scalar("loss_D_real", self.model["loss_D_real"]),
+            tf.compat.v1.summary.scalar("loss_D_fake", self.model["loss_D_fake"]),
+            tf.compat.v1.summary.scalar("loss_D", self.model["loss_D"]),
+            tf.compat.v1.summary.scalar("loss_G", self.model["loss_G"]),
+            tf.compat.v1.summary.scalar("loss_E", self.model["loss_E"])])
+        self.summary_writer = tf.compat.v1.summary.FileWriter(config.logdir)
 
-        sess_config = tf.ConfigProto(
+        sess_config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
-            gpu_options=tf.GPUOptions(allow_growth=True))
-        self.sess = tf.Session(config=sess_config)
+            gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
+        self.sess = tf.compat.v1.Session(config=sess_config)
         self.config = config
 
 
     def _build_model(self, filenamequeue, config):
         x_, y_, tr_, ir_, img_, tex_ = self._im_from_tfrecords(filenamequeue, config)
-        z_ = tf.placeholder(tf.float32, [None, config.z_dim], name="z")
-        training_ = tf.placeholder(tf.bool, name="is_training")
+        z_ = tf.compat.v1.placeholder(tf.float32, [None, config.z_dim], name="z")
+        training_ = tf.compat.v1.placeholder(tf.bool, name="is_training")
 
         category = tf.one_hot(y_, depth=config.y_dim)
         textratio = tf.one_hot(tr_, depth=config.tr_dim)
@@ -53,7 +53,7 @@ class Trainer(object):
                                 config.latent_dim]) * tf.ones([config.batch_size, 64, 64, config.latent_dim])
         encoderdis_label = tf.reshape(y_label, shape=[-1, 1, 1,
                                 config.latent_dim]) * tf.ones([config.batch_size, 4, 4, config.latent_dim])
-        randomz = tf.random_normal([config.batch_size, config.z_dim])
+        randomz = tf.random.normal([config.batch_size, config.z_dim])
         # testing case
         testLayout, testImgfea, testSemvec, testTexfea = self.inputs(config)
         randomz_val = np.load('./sample/noiseVector_128.npy')
@@ -81,63 +81,63 @@ class Trainer(object):
                                                      y=ydis_label,
                                                      z=z_, reuse=True)
         # loss
-        with tf.variable_scope("Loss_E"):
-            kl_div = -0.5 * tf.reduce_sum(1 + 2 * z_log_sigma_sq -
+        with tf.compat.v1.variable_scope("Loss_E"):
+            kl_div = -0.5 * tf.reduce_sum(input_tensor=1 + 2 * z_log_sigma_sq -
                                           tf.square(z_mean) -
-                                          tf.exp(2 * z_log_sigma_sq), 1)
+                                          tf.exp(2 * z_log_sigma_sq), axis=1)
 
             originput = tf.reshape(x_, [config.batch_size, 64 * 64 * 3])
             originput = (originput + 1) / 2.0
             generated_flat = tf.reshape(Grecon,
                                         [config.batch_size, 64 * 64 * 3])
             generated_flat = (generated_flat + 1) / 2.0
-            recon_loss = tf.reduce_sum(tf.pow((generated_flat -
-                                               originput), 2), 1)
-            loss_E = tf.reduce_mean(kl_div + recon_loss) / 64 / 64 / 3
+            recon_loss = tf.reduce_sum(input_tensor=tf.pow((generated_flat -
+                                               originput), 2), axis=1)
+            loss_E = tf.reduce_mean(input_tensor=kl_div + recon_loss) / 64 / 64 / 3
 
-        with tf.variable_scope("Loss_D"):
-            loss_D_real = tf.reduce_mean(tf.nn.l2_loss(D_real - tf.ones_like(D_real)))
-            loss_D_fake = tf.reduce_mean(tf.nn.l2_loss(D_fake - tf.zeros_like(D_fake)))
+        with tf.compat.v1.variable_scope("Loss_D"):
+            loss_D_real = tf.reduce_mean(input_tensor=tf.nn.l2_loss(D_real - tf.ones_like(D_real)))
+            loss_D_fake = tf.reduce_mean(input_tensor=tf.nn.l2_loss(D_fake - tf.zeros_like(D_fake)))
             loss_D = loss_D_real + loss_D_fake
 
-        with tf.variable_scope("Loss_G"):
-            loss_Gls = tf.reduce_mean(tf.nn.l2_loss(D_fake - tf.ones_like(D_fake)))
+        with tf.compat.v1.variable_scope("Loss_G"):
+            loss_Gls = tf.reduce_mean(input_tensor=tf.nn.l2_loss(D_fake - tf.ones_like(D_fake)))
 
-            kl_div = -0.5 * tf.reduce_sum(1 + 2 * z_log_sigma_sq -
+            kl_div = -0.5 * tf.reduce_sum(input_tensor=1 + 2 * z_log_sigma_sq -
                                           tf.square(z_mean) -
-                                          tf.exp(2 * z_log_sigma_sq), 1)
+                                          tf.exp(2 * z_log_sigma_sq), axis=1)
 
             originput = tf.reshape(x_, [config.batch_size, 64 * 64 * 3])
             originput = (originput + 1) / 2.0
             generated_flat = tf.reshape(Grecon,
                                         [config.batch_size, 64 * 64 * 3])
             generated_flat = (generated_flat + 1) / 2.0
-            recon_loss = tf.reduce_sum(tf.pow((generated_flat -
-                                               originput), 2), 1)
-            loss_G3 = tf.reduce_mean(kl_div + recon_loss) / 64 / 64 / 3
+            recon_loss = tf.reduce_sum(input_tensor=tf.pow((generated_flat -
+                                               originput), 2), axis=1)
+            loss_G3 = tf.reduce_mean(input_tensor=kl_div + recon_loss) / 64 / 64 / 3
 
-            recon_loss = tf.reduce_mean(recon_loss) / 64 / 64 / 3
+            recon_loss = tf.reduce_mean(input_tensor=recon_loss) / 64 / 64 / 3
             loss_G = loss_Gls + recon_loss
 
-        with tf.variable_scope("Optimizer_D"):
-            vars_D = [var for var in tf.trainable_variables()
+        with tf.compat.v1.variable_scope("Optimizer_D"):
+            vars_D = [var for var in tf.compat.v1.trainable_variables()
                       if "discriminator" in var.name]
-            opt_D = tf.train.AdamOptimizer(config.lr,
+            opt_D = tf.compat.v1.train.AdamOptimizer(config.lr,
                                            beta1=config.beta1).minimize(loss_D,
                                                                         self.global_step,
                                                                         var_list=vars_D)
 
-        with tf.variable_scope("Optimizer_G"):
-            vars_G = [var for var in tf.trainable_variables()
+        with tf.compat.v1.variable_scope("Optimizer_G"):
+            vars_G = [var for var in tf.compat.v1.trainable_variables()
                       if "generator" in var.name]
-            opt_G = tf.train.AdamOptimizer(config.lr,
+            opt_G = tf.compat.v1.train.AdamOptimizer(config.lr,
                                            beta1=config.beta1).minimize(loss_G,
                                                                         var_list=vars_G)
         
-        with tf.variable_scope("Optimizer_E"):
-            vars_E = [var for var in tf.trainable_variables()
+        with tf.compat.v1.variable_scope("Optimizer_E"):
+            vars_E = [var for var in tf.compat.v1.trainable_variables()
                       if "encoder" in var.name or "embeddingSemvec" in var.name or "embeddingImg" in var.name or "embeddingTex" in var.name or "embeddingFusion" in var.name]
-            opt_E = tf.train.AdamOptimizer(config.lr,
+            opt_E = tf.compat.v1.train.AdamOptimizer(config.lr,
                                            beta1=config.beta1).minimize(loss_E,
                                                                         var_list=vars_E)
 
@@ -155,9 +155,9 @@ class Trainer(object):
 
     def fit(self):
         config = self.config
-        self.sess.run(tf.global_variables_initializer())
+        self.sess.run(tf.compat.v1.global_variables_initializer())
         coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(sess=self.sess, coord=coord)
+        threads = tf.compat.v1.train.start_queue_runners(sess=self.sess, coord=coord)
 
         for step in range(config.max_steps):
             t1 = time.time()
@@ -221,7 +221,7 @@ class Trainer(object):
         return (inputdata + 1) / 2.0, (gen + 1) / 2.0, fea
 
     def testing(self):
-        new_saver = tf.train.import_meta_graph('./log/layoutNet-100.meta')
+        new_saver = tf.compat.v1.train.import_meta_graph('./log/layoutNet-100.meta')
         new_saver.restore(self.sess, './log/layoutNet-100')
         gen, fea = self.sess.run([self.model["Gtest"],
                                   self.model["Etest"]],
@@ -285,35 +285,35 @@ class Trainer(object):
 
     def _im_from_tfrecords(self, filenamequeue, config, shuffle=True):
         capacity = config.min_after_dequeue + 3 * config.batch_size
-        reader = tf.TFRecordReader()
+        reader = tf.compat.v1.TFRecordReader()
         _, serialized_example = reader.read(filenamequeue)
-        features = tf.parse_single_example(
-            serialized_example,
+        features = tf.io.parse_single_example(
+            serialized=serialized_example,
             features={
-                "label": tf.FixedLenFeature([], tf.int64),
-                "textRatio": tf.FixedLenFeature([], tf.int64),
-                "imgRatio": tf.FixedLenFeature([], tf.int64),
-                'visualfea': tf.FixedLenFeature([], tf.string),
-                'textualfea': tf.FixedLenFeature([], tf.string),
-                "img_raw": tf.FixedLenFeature([], tf.string)
+                "label": tf.io.FixedLenFeature([], tf.int64),
+                "textRatio": tf.io.FixedLenFeature([], tf.int64),
+                "imgRatio": tf.io.FixedLenFeature([], tf.int64),
+                'visualfea': tf.io.FixedLenFeature([], tf.string),
+                'textualfea': tf.io.FixedLenFeature([], tf.string),
+                "img_raw": tf.io.FixedLenFeature([], tf.string)
             }
         )
-        image = tf.cast(tf.reshape((tf.decode_raw(features['img_raw'],
+        image = tf.cast(tf.reshape((tf.io.decode_raw(features['img_raw'],
                                                   tf.uint8)),
                                    [60, 45, 3]), tf.float32)
-        resized_image = tf.image.resize_image_with_crop_or_pad(image, 64, 64)
+        resized_image = tf.image.resize_with_crop_or_pad(image, 64, 64)
         resized_image = resized_image / 127.5 - 1.0
         label = tf.cast(features['label'], tf.int32)
         textRatio = tf.cast(features['textRatio'], tf.int32)
         imgRatio = tf.cast(features['imgRatio'], tf.int32)
         visualfea = features['visualfea']
-        visualfea = tf.decode_raw(visualfea, tf.float32)
+        visualfea = tf.io.decode_raw(visualfea, tf.float32)
         visualfea = tf.reshape(visualfea, [14, 14, 512])
         textualfea = features['textualfea']
-        textualfea = tf.decode_raw(textualfea, tf.float32)
+        textualfea = tf.io.decode_raw(textualfea, tf.float32)
         textualfea = tf.reshape(textualfea, [300])
 
-        images, labels, textRatios, imgRatios, visualfea, textualfea = tf.train.shuffle_batch(
+        images, labels, textRatios, imgRatios, visualfea, textualfea = tf.compat.v1.train.shuffle_batch(
             [resized_image, label, textRatio, imgRatio, visualfea, textualfea],
             batch_size=config.batch_size,
             capacity=capacity,

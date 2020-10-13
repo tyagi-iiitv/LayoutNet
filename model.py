@@ -13,7 +13,7 @@ def batch_norm_params(is_training):
 
 
 def lrelu(inputs, leak=0.2, scope="lrelu"):
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         f1 = 0.5 * (1 + leak)
         f2 = 0.5 * (1 - leak)
         return f1 * inputs + f2 * abs(inputs)
@@ -21,7 +21,7 @@ def lrelu(inputs, leak=0.2, scope="lrelu"):
 
 def embed_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.fully_connected],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=tf.nn.relu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -30,7 +30,7 @@ def embed_arg_scope(is_training=True, outputs_collections=None):
 
 
 def embeddingSemvec(inputs, is_training, reuse=None, scope=None):
-    with tf.variable_scope(scope or "embeddingSemvec", values=[inputs], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "embeddingSemvec", values=[inputs], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(embed_arg_scope(is_training, end_pts_collection)):
             category = tf.concat([inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6], inputs[:, 0:6]],1)
@@ -59,7 +59,7 @@ def embeddingSemvec(inputs, is_training, reuse=None, scope=None):
 
 def embedImg_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.fully_connected],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=tf.nn.relu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -68,10 +68,10 @@ def embedImg_arg_scope(is_training=True, outputs_collections=None):
 
 
 def embeddingImg(inputs, is_training, reuse=None, scope=None):
-    with tf.variable_scope(scope or "embeddingImg", values=[inputs], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "embeddingImg", values=[inputs], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(embedImg_arg_scope(is_training, end_pts_collection)):
-            inputs = tf.reduce_mean(inputs, [1, 2])
+            inputs = tf.reduce_mean(input_tensor=inputs, axis=[1, 2])
             net = slim.fully_connected(inputs, 512,
                                        normalizer_fn=None,
                                        normalizer_params=None,
@@ -90,7 +90,7 @@ def embeddingImg(inputs, is_training, reuse=None, scope=None):
 
 def embedTex_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.fully_connected],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=tf.nn.relu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -99,7 +99,7 @@ def embedTex_arg_scope(is_training=True, outputs_collections=None):
 
 
 def embeddingTex(inputs, is_training, reuse=None, scope=None):
-    with tf.variable_scope(scope or "embeddingTex", values=[inputs], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "embeddingTex", values=[inputs], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(embedTex_arg_scope(is_training, end_pts_collection)):
             net = slim.fully_connected(inputs, 256,
@@ -120,7 +120,7 @@ def embeddingTex(inputs, is_training, reuse=None, scope=None):
 
 def embedFusion_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.fully_connected],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=tf.nn.relu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -129,7 +129,7 @@ def embedFusion_arg_scope(is_training=True, outputs_collections=None):
 
 
 def embeddingFusion(input1, input2, input3, is_training, reuse=None, scope=None):
-    with tf.variable_scope(scope or "embeddingFusion", values=[input1, input2], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "embeddingFusion", values=[input1, input2], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(embedFusion_arg_scope(is_training, end_pts_collection)):
             net = tf.concat([input1, input2, input3], 1)
@@ -147,7 +147,7 @@ def embeddingFusion(input1, input2, input3, is_training, reuse=None, scope=None)
 
 def gen_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=tf.nn.relu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -164,7 +164,7 @@ def generator(z, is_training, y=None, reuse=None, scope=None):
     else:
         inputs = tf.concat((z, y), 1)
 
-    with tf.variable_scope(scope or "generator", values=[z], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "generator", values=[z], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(gen_arg_scope(is_training, end_pts_collection)):
             net = slim.fully_connected(inputs, 4 * 4 * 512,
@@ -189,7 +189,7 @@ def generator(z, is_training, y=None, reuse=None, scope=None):
 
 def disc_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.conv2d, slim.fully_connected],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=lrelu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -206,7 +206,7 @@ def discriminator(inputs, is_training, y=None, z=None, reuse=None, scope=None):
     else:
         inputss = tf.concat([inputs, y], 3)
 
-    with tf.variable_scope(scope or "discriminator", values=[inputs], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "discriminator", values=[inputs], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(disc_arg_scope(is_training, end_pts_collection)):
             net = slim.conv2d(inputss, 64,
@@ -238,7 +238,7 @@ def discriminator(inputs, is_training, y=None, z=None, reuse=None, scope=None):
 
 def enc_arg_scope(is_training=True, outputs_collections=None):
     with slim.arg_scope([slim.conv2d],
-                        weights_initializer=tf.truncated_normal_initializer(stddev=0.02),
+                        weights_initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02),
                         activation_fn=lrelu,
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params(is_training),
@@ -250,7 +250,7 @@ def enc_arg_scope(is_training=True, outputs_collections=None):
 def encoder(inputs, is_training, y=None, reuse=None, scope=None):
     inputss = inputs
 
-    with tf.variable_scope(scope or "encoder", values=[inputs], reuse=reuse) as scp:
+    with tf.compat.v1.variable_scope(scope or "encoder", values=[inputs], reuse=reuse) as scp:
         end_pts_collection = scp.name + "end_pts"
         with slim.arg_scope(enc_arg_scope(is_training, end_pts_collection)):
             net = slim.conv2d(inputss, 64,
