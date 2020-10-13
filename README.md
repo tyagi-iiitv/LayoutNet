@@ -1,5 +1,5 @@
 ## Requirement
-* python 2.7
+* python 3.7
 * cuda 9.0
 * pillow
 * scipy
