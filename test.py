@@ -15,7 +15,7 @@ def main():
         os.makedirs(cfg.sampledir)
   
     im, _ = t.testing()
-    print im.shape
+    print(im.shape)
     imname = os.path.join(cfg.sampledir, "sample" + ".png")
     h, w = im.shape[1], im.shape[2]
     merge_img = np.zeros((h * 16, w * 8, 3))
