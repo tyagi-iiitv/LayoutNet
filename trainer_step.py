@@ -189,13 +189,13 @@ class Trainer(object):
             if (step + 1) % config.summary_every_n_steps == 0:
                 summary_feed_dict = {self.model["z"]: z,
                                      self.model["is_training"]: False}
-                print ("step {:5d},loss = (G: {:.8f}, D: {:.8f}), E: {:.8f}"
-                       .format(step, g_loss, d_loss, e_loss))
+                print(("step {:5d},loss = (G: {:.8f}, D: {:.8f}), E: {:.8f}"
+                       .format(step, g_loss, d_loss, e_loss)))
 
             if (step + 1) % config.sample_every_n_steps == 0:
                 eta = (t2 - t1) * (config.max_steps - step + 1)
-                print("Finished {}/{} step, ETA:{:.2f}s"
-                      .format(step + 1, config.max_steps, eta))
+                print(("Finished {}/{} step, ETA:{:.2f}s"
+                      .format(step + 1, config.max_steps, eta)))
                 self.saver.save(self.sess, './log/layoutNet',global_step=(step+1))
 
                 inputdata, gen, fea = self.sample()
