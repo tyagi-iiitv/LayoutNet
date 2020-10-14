@@ -8,6 +8,7 @@ import tensorflow as tf
 import model
 import tf_slim as slim
 import sys
+tf.compat.v1.disable_eager_execution()
 # slim = tf.contrib.slim
 
 class Trainer(object):
@@ -243,7 +244,7 @@ class Trainer(object):
         texfeapath = os.getcwd() + '/sample/texfea/'
         semvecpath = os.getcwd() + '/sample/semvec/'
 
-        f = file('./sample/imgSel_128.txt', 'r')
+        f = open('./sample/imgSel_128.txt', 'r')
         name = f.read()
         namelist = name.split()
         n_samples = len(namelist)
