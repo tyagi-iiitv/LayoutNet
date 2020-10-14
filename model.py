@@ -1,5 +1,6 @@
 import tensorflow as tf
-slim = tf.contrib.slim
+import tf_slim as slim
+# slim = tf.contrib.slim
 
 
 def batch_norm_params(is_training):

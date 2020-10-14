@@ -6,8 +6,8 @@ import scipy.misc
 import numpy as np
 import tensorflow as tf
 import model
-
-slim = tf.contrib.slim
+import tf_slim as slim
+# slim = tf.contrib.slim
 
 
 class Trainer(object):
