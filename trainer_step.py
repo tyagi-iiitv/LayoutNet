@@ -10,7 +10,7 @@ import tf_slim as slim
 tf.compat.v1.disable_eager_execution()
 # slim = tf.contrib.slim
 
-
+DATA_DIR = os.path.join('..','drive','My Drive','LayoutNet')
 class Trainer(object):
     def __init__(self, config):
         filenamequeue = tf.compat.v1.train.string_input_producer([config.filenamequeue])
@@ -57,7 +57,7 @@ class Trainer(object):
         randomz = tf.random.normal([config.batch_size, config.z_dim])
         # testing case
         testLayout, testImgfea, testSemvec, testTexfea = self.inputs(config)
-        randomz_val = np.load('./sample/noiseVector_128.npy')
+        randomz_val = np.load(os.path.join(DATA_DIR,'sample','noiseVector_128.npy'))
         testSemvec, _ = model.embeddingSemvec(testSemvec, training_, reuse=True)
         testImgfea, _ = model.embeddingImg(testImgfea, training_, reuse=True)
         testTexfea, _ = model.embeddingTex(testTexfea, training_, reuse=True)
@@ -231,12 +231,12 @@ class Trainer(object):
         return (gen + 1) / 2.0, fea
 
     def inputs(self, config):
-        layoutpath = os.getcwd() + '/sample/layout/'
-        imgfeapath = os.getcwd() + '/sample/visfea/'
-        texfeapath = os.getcwd() + '/sample/texfea/'
-        semvecpath = os.getcwd() + '/sample/semvec/'
+        layoutpath = DATA_DIR + '/sample/layout/'
+        imgfeapath = DATA_DIR + '/sample/visfea/'
+        texfeapath = DATA_DIR + '/sample/texfea/'
+        semvecpath = DATA_DIR + '/sample/semvec/'
 
-        f = open('./sample/imgSel_128.txt', 'r')
+        f = open((DATA_DIR + '/sample/imgSel_128.txt'), 'r')
         name = f.read()
         namelist = name.split()
         n_samples = len(namelist)
