@@ -7,21 +7,13 @@ import numpy as np
 import tensorflow as tf
 import model
 import tf_slim as slim
-import sys
 tf.compat.v1.disable_eager_execution()
 # slim = tf.contrib.slim
 
+
 class Trainer(object):
     def __init__(self, config):
-        filenamequeue = tf.data.TFRecordDataset([config.filenamequeue])
-        self.features={
-                "label": tf.io.FixedLenFeature([], tf.int64),
-                "textRatio": tf.io.FixedLenFeature([], tf.int64),
-                "imgRatio": tf.io.FixedLenFeature([], tf.int64),
-                'visualfea': tf.io.FixedLenFeature([], tf.string),
-                'textualfea': tf.io.FixedLenFeature([], tf.string),
-                "img_raw": tf.io.FixedLenFeature([], tf.string)
-            }
+        filenamequeue = tf.compat.v1.train.string_input_producer([config.filenamequeue])
         self.global_step = tf.Variable(0, name="global_step")
         self.model = self._build_model(filenamequeue, config)
         self.saver = tf.compat.v1.train.Saver(max_to_keep=None)
@@ -292,31 +284,35 @@ class Trainer(object):
 
         return testLayout, testImgfea, testSemvec, testTexfea
 
-    def _parse_function(self, example_proto):
-        return tf.io.parse_single_example(example_proto, self.features)
-    
     def _im_from_tfrecords(self, filenamequeue, config, shuffle=True):
         capacity = config.min_after_dequeue + 3 * config.batch_size
-        # serialized_example = tf.data.TFRecordDataset(filenamequeue)
-        # _, serialized_example = reader.read(filenamequeue)
-        parsed = filenamequeue.map(self._parse_function)
-        print(parsed)
-        sys.exit()
-        for f in features:
-            image = tf.cast(tf.reshape((tf.io.decode_raw(features['img_raw'],
-                                                    tf.uint8)),
-                                    [60, 45, 3]), tf.float32)
-            resized_image = tf.image.resize_with_crop_or_pad(image, 64, 64)
-            resized_image = resized_image / 127.5 - 1.0
-            label = tf.cast(features['label'], tf.int32)
-            textRatio = tf.cast(features['textRatio'], tf.int32)
-            imgRatio = tf.cast(features['imgRatio'], tf.int32)
-            visualfea = features['visualfea']
-            visualfea = tf.io.decode_raw(visualfea, tf.float32)
-            visualfea = tf.reshape(visualfea, [14, 14, 512])
-            textualfea = features['textualfea']
-            textualfea = tf.io.decode_raw(textualfea, tf.float32)
-            textualfea = tf.reshape(textualfea, [300])
+        reader = tf.compat.v1.TFRecordReader()
+        _, serialized_example = reader.read(filenamequeue)
+        features = tf.io.parse_single_example(
+            serialized=serialized_example,
+            features={
+                "label": tf.io.FixedLenFeature([], tf.int64),
+                "textRatio": tf.io.FixedLenFeature([], tf.int64),
+                "imgRatio": tf.io.FixedLenFeature([], tf.int64),
+                'visualfea': tf.io.FixedLenFeature([], tf.string),
+                'textualfea': tf.io.FixedLenFeature([], tf.string),
+                "img_raw": tf.io.FixedLenFeature([], tf.string)
+            }
+        )
+        image = tf.cast(tf.reshape((tf.io.decode_raw(features['img_raw'],
+                                                  tf.uint8)),
+                                   [60, 45, 3]), tf.float32)
+        resized_image = tf.image.resize_with_crop_or_pad(image, 64, 64)
+        resized_image = resized_image / 127.5 - 1.0
+        label = tf.cast(features['label'], tf.int32)
+        textRatio = tf.cast(features['textRatio'], tf.int32)
+        imgRatio = tf.cast(features['imgRatio'], tf.int32)
+        visualfea = features['visualfea']
+        visualfea = tf.io.decode_raw(visualfea, tf.float32)
+        visualfea = tf.reshape(visualfea, [14, 14, 512])
+        textualfea = features['textualfea']
+        textualfea = tf.io.decode_raw(textualfea, tf.float32)
+        textualfea = tf.reshape(textualfea, [300])
 
         images, labels, textRatios, imgRatios, visualfea, textualfea = tf.compat.v1.train.shuffle_batch(
             [resized_image, label, textRatio, imgRatio, visualfea, textualfea],
@@ -327,4 +323,4 @@ class Trainer(object):
             allow_smaller_final_batch=True,
             name="images")
 
-        # return images, labels, textRatios, imgRatios, visualfea, textualfea
+        return images, labels, textRatios, imgRatios, visualfea, textualfea
