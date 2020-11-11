@@ -1,11 +1,11 @@
-## Requirement
-* python 3.7
-* cuda 9.0
-* pillow
-* scipy
-* tensorflow 1.5.0
-* tensorslim
+## Setup
+```
+conda create -p ./env
+source activate ./env
+pip install tensorflow-gpu pillow scipy tf_slim
+```
 
+Store the `dataset, example, sample, validation` directories inside a `data` directory outside the `LayoutNet` directory. 
 ## Training
 * ``python train.py``
 * Results are generated in the folder ``./example/*.png``
