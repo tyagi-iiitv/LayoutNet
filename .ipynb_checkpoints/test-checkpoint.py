@@ -7,7 +7,7 @@ import trainer_step
 
 
 def main():
-    cfg = config.Config(filenamequeue="../data/dataset/layout_1205.tfrecords",
+    cfg = config.Config(filenamequeue="./dataset/layout_1205.tfrecords",
                         logdir="log")
     t = trainer_step.Trainer(cfg)
 
