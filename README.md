@@ -1,5 +1,5 @@
 ## Paper link
-This repository contains code for the paper: Content Aware Layout Generation [https://xtqiao.com/projects/content_aware_layout/](link)
+This repository contains code for the paper: Content Aware Layout Generation [link](https://xtqiao.com/projects/content_aware_layout/)
 
 ## Setup
 ```
